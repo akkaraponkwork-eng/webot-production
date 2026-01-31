@@ -55,8 +55,11 @@ const createMockClient = () => {
     }
 }
 
-// Logic: Use Real Client if keys exist, otherwise force Mock Client
-const shouldUseMock = !supabaseUrl || !supabaseKey || import.meta.env.VITE_USE_MOCK === 'true'
+// Logic: Use Real Client if keys exist AND are not placeholders, otherwise force Mock Client
+const shouldUseMock = !supabaseUrl || 
+                      !supabaseKey || 
+                      supabaseUrl.includes('YOUR_SUPABASE_URL') ||
+                      import.meta.env.VITE_USE_MOCK === 'true'
 
 export const supabase = shouldUseMock ? createMockClient() : createClient(supabaseUrl, supabaseKey, {
   auth: {
