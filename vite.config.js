@@ -14,10 +14,10 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ['iceberg-js'],
+      // external: ['iceberg-js'], // REMOVED: We want to bundle the mock!
     },
   },
   optimizeDeps: {
-    exclude: ['iceberg-js'],
+    // exclude: ['iceberg-js'], // REMOVED
   },
 });
