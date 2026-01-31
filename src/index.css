@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-family: "Nunito", "Inter", system-ui, sans-serif;
+  --color-primary: #f97316; /* Orange-500 */
+  --color-secondary: #fffbf5; /* Creamy White */
+  --color-text: #4a4a4a; /* Softer Dark Gray */
+  --color-accent: #FFEDD5; /* Orange-100 */
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-secondary);
+  color: var(--color-text);
+  overflow-x: hidden;
+}
+
+/* Antigravity utility */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
