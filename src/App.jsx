@@ -1,5 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UserProvider } from './contexts/UserContext'
 import { PetProvider } from './contexts/PetContext'
 import { DataProvider } from './contexts/DataContext'
@@ -9,10 +10,17 @@ import Dashboard from './pages/Dashboard'
 import CalendarPage from './pages/CalendarPage'
 import SummaryPage from './pages/SummaryPage'
 import Settings from './pages/Settings'
+import Admin from './pages/Admin'
+import LoadingOverlay from './components/ui/LoadingOverlay'
+
+const queryClient = new QueryClient()
 
 function App() {
   return (
-    <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <LoadingOverlay />
+      <BrowserRouter>
+
       <UserProvider>
         <PetProvider>
             <DataProvider>
@@ -24,6 +32,7 @@ function App() {
                     <Route path="/my-cat" element={<Dashboard />} />
                     <Route path="/summary" element={<SummaryPage />} />
                     <Route path="/settings" element={<Settings />} />
+                    <Route path="/admin" element={<Admin />} />
                 </Route>
                 
                 <Route path="*" element={<Navigate to="/" replace />} />
@@ -31,7 +40,8 @@ function App() {
             </DataProvider>
         </PetProvider>
       </UserProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </QueryClientProvider>
   )
 }
 

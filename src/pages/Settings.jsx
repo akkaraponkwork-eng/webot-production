@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { useUser } from '../contexts/UserContext'
-import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -10,26 +9,44 @@ export default function Settings() {
   const navigate = useNavigate()
   const [baseSalary, setBaseSalary] = useState(25000)
   const [workDays, setWorkDays] = useState(30)
+  const [targetOT, setTargetOT] = useState(50000)
   const [startTime, setStartTime] = useState('08:00')
   const [endTime, setEndTime] = useState('17:00')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
+    const formatTime = (t) => {
+        if (!t) return '08:00'
+        if (typeof t === 'string' && t.includes('T')) return '08:00' // Fallback for GS Date strings
+        return t.substring(0, 5)
+    }
+
     if (user?.base_salary) setBaseSalary(user.base_salary)
     if (user?.work_days_per_month) setWorkDays(user.work_days_per_month)
-    if (user?.work_start_time) setStartTime(user.work_start_time)
-    if (user?.work_end_time) setEndTime(user.work_end_time)
+    if (user?.work_start_time) setStartTime(formatTime(user.work_start_time))
+    if (user?.work_end_time) setEndTime(formatTime(user.work_end_time))
+    
+    if (user?.ot_target) {
+        setTargetOT(user.ot_target)
+    } else {
+        const localTarget = localStorage.getItem('ot_target_' + user?.id)
+        if (localTarget) setTargetOT(Number(localTarget))
+    }
   }, [user])
 
   const handleSave = async () => {
     setSaving(true)
     
-    // Use context method to ensure local state updates immediately
+    localStorage.setItem('ot_target_' + user?.id, targetOT)
+    
+    // Use context method to ensure local state updates immediately. 
+    // Unmapped keys to Sheets are safely ignored by the API proxy.
     const result = await updateProfile({ 
         base_salary: parseFloat(baseSalary),
         work_days_per_month: parseInt(workDays),
         work_start_time: startTime,
-        work_end_time: endTime
+        work_end_time: endTime,
+        ot_target: parseInt(targetOT)
     })
     
     if (result.success) {
@@ -76,6 +93,16 @@ export default function Settings() {
                     value={workDays}
                     onChange={(e) => setWorkDays(e.target.value)}
                     className="w-16 bg-white rounded-lg p-2 text-center text-sm font-bold text-slate-700 outline-none ring-1 ring-orange-100 focus:ring-orange-300"
+                />
+            </div>
+
+            <div className="w-full flex items-center justify-between border-t border-orange-100 pt-4">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Yearly OT Goal (THB)</label>
+                <input 
+                    type="number"
+                    value={targetOT}
+                    onChange={(e) => setTargetOT(e.target.value)}
+                    className="w-24 bg-white rounded-lg p-2 text-center text-sm font-bold text-slate-700 outline-none ring-1 ring-orange-100 focus:ring-orange-300"
                 />
             </div>
 

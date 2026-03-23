@@ -1,5 +1,5 @@
 import React from 'react'
-import { Settings, Cat } from 'lucide-react'
+import { Settings, Cat, Shield } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import { usePet } from '../../contexts/PetContext'
@@ -24,7 +24,12 @@ export default function TopBar() {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        {user?.role === 'admin' && (
+            <Link to="/admin" className="bg-red-50 text-red-500 p-2 rounded-xl flex items-center justify-center hover:bg-red-100 transition-colors" title="Admin Dashboard">
+                <Shield className="w-4 h-4" strokeWidth={2.5} />
+            </Link>
+        )}
         <div className="bg-orange-50 px-3 py-1.5 rounded-full flex items-center gap-1 border border-orange-100">
             <span className="text-xs font-bold text-orange-400">★</span>
             <span className="text-xs font-bold text-orange-600">{points || 0}</span>

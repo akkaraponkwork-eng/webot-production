@@ -1,61 +1,49 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useUser } from './UserContext'
-import { supabase } from '../lib/supabase'
-import { GAME_CONSTANTS } from '../lib/constants'
 
 const PetContext = createContext({})
 
 export const usePet = () => useContext(PetContext)
 
 export const PetProvider = ({ children }) => {
-  const { user } = useUser()
+  const { user, updateProfile } = useUser()
   const [petState, setPetState] = useState({
     level: 1,
     exp: 0,
     points: 0,
-    totalExpToLevel: 100, // Initial requirement
+    totalExpToLevel: 100,
     status: 'happy',
   })
   
-  // Load pet data
   useEffect(() => {
     if (!user) return
     
-    const loadPetData = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('pet_level, pet_exp, meow_points')
-        .eq('id', user.id)
-        .single()
-        
-      if (data) {
-        // Recalculate totalExpToLevel based on current level
-        // Formula: 100 * (1.5 ^ (level - 1))
-        let reqExp = 100
-        for (let i = 1; i < (data.pet_level || 1); i++) {
-            reqExp = Math.round(reqExp * 1.5)
-        }
-
-        setPetState({
-            level: data.pet_level || 1,
-            exp: data.pet_exp || 0,
-            points: data.meow_points || 0,
-            totalExpToLevel: reqExp,
-            status: 'happy'
-        })
-      }
+    let reqExp = 100
+    for (let i = 1; i < (user.pet_level || 1); i++) {
+        reqExp = Math.round(reqExp * 1.5)
     }
-    
-    loadPetData()
+
+    setPetState({
+        level: user.pet_level || 1,
+        exp: user.pet_exp || 0,
+        points: user.meow_points || 0,
+        totalExpToLevel: reqExp,
+        status: 'happy'
+    })
   }, [user])
+
+  const syncToDB = async (pts, xp, lvl) => {
+       await updateProfile({
+          meow_points: pts,
+          pet_exp: xp,
+          pet_level: lvl
+       })
+  }
 
   const buyItem = async (cost, expGained) => {
       if (petState.points < cost) return false
 
-      // Deduct Points
       const newPoints = petState.points - cost
-      
-      // Add EXP & Level Up Logic
       let newExp = petState.exp + expGained
       let newLevel = petState.level
       let newExpToLevel = petState.totalExpToLevel
@@ -74,22 +62,13 @@ export const PetProvider = ({ children }) => {
           totalExpToLevel: newExpToLevel 
       }))
 
-      // Sync DB
-      await supabase.from('profiles').update({
-          meow_points: newPoints,
-          pet_exp: newExp,
-          pet_level: newLevel
-      }).eq('id', user.id)
-
+      await syncToDB(newPoints, newExp, newLevel)
       return true
   }
 
   const addExp = async (amount) => {
-    // Legacy support or direct exp gain
     if (!user) return
     
-    // Use same logic logic as buyItem but without cost
-    // ... we can refactor later but for now let's just reuse logic manually
     let newExp = petState.exp + amount
     let newLevel = petState.level
     let newExpToLevel = petState.totalExpToLevel
@@ -101,19 +80,14 @@ export const PetProvider = ({ children }) => {
     }
     
     setPetState(prev => ({ ...prev, exp: newExp, level: newLevel, totalExpToLevel: newExpToLevel }))
-
-    await supabase.from('profiles').update({
-        pet_exp: newExp,
-        pet_level: newLevel
-    }).eq('id', user.id)
+    await syncToDB(petState.points, newExp, newLevel)
   }
 
   const earnPoints = async (amount) => {
+      if (!user) return
       const newPoints = petState.points + amount
       setPetState(prev => ({ ...prev, points: newPoints }))
-       await supabase.from('profiles').update({
-        meow_points: newPoints
-    }).eq('id', user.id)
+      await syncToDB(newPoints, petState.exp, petState.level)
   }
 
   return (

@@ -7,25 +7,46 @@ export function CatModel(props) {
   const [hovered, setHover] = useState(false)
   const [active, setActive] = useState(false)
 
-  const [blink, setBlink] = useState(false)
+  const leftEye = useRef()
+  const rightEye = useRef()
+  const blinkTimeout = useRef(null)
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (blinkTimeout.current) clearTimeout(blinkTimeout.current)
+    }
+  }, [])
 
   // Floating & Blinking animation
   useFrame((state) => {
     const t = state.clock.getElapsedTime()
-    group.current.position.y = Math.sin(t * 1) * 0.2 // Float
-    group.current.rotation.y = Math.sin(t * 0.5) * 0.1 // Rotate
+    if (group.current) {
+        group.current.position.y = Math.sin(t * 1) * 0.2 // Float
+        group.current.rotation.y = Math.sin(t * 0.5) * 0.1 // Rotate
+    }
     
-    // Random Blink
-    if (Math.random() > 0.995) setBlink(true)
-    if (blink) setTimeout(() => setBlink(false), 150)
+    // Random Blink without React state updates (no re-renders)
+    if (Math.random() > 0.995 && !blinkTimeout.current) {
+        if (leftEye.current && rightEye.current) {
+            leftEye.current.scale.set(1, 0.1, 1)
+            rightEye.current.scale.set(1, 0.1, 1)
+            
+            blinkTimeout.current = setTimeout(() => {
+                if (leftEye.current && rightEye.current) {
+                    leftEye.current.scale.set(1, 1, 1)
+                    rightEye.current.scale.set(1, 1, 1)
+                }
+                blinkTimeout.current = null
+            }, 150)
+        }
+    }
   })
 
   // Colors
   const ORANGE = "#fb923c"
   const WHITE = "#fff7ed"
   const DARK = "#451a03"
-
-  const eyeScale = blink ? [1, 0.1, 1] : [1, 1, 1]
 
   return (
     <group ref={group} {...props} dispose={null} 
@@ -50,11 +71,11 @@ export function CatModel(props) {
       </mesh>
 
       {/* Eyes */}
-      <mesh position={[-0.15, 0.9, 0.4]} scale={eyeScale}>
+      <mesh ref={leftEye} position={[-0.15, 0.9, 0.4]}>
         <sphereGeometry args={[0.08, 16, 16]} />
         <meshStandardMaterial color={DARK} />
       </mesh>
-      <mesh position={[0.15, 0.9, 0.4]} scale={eyeScale}>
+      <mesh ref={rightEye} position={[0.15, 0.9, 0.4]}>
         <sphereGeometry args={[0.08, 16, 16]} />
         <meshStandardMaterial color={DARK} />
       </mesh>

@@ -31,27 +31,27 @@ export function YearlyTrendChart({ year }) {
   const maxAmount = Math.max(...data.map(d => d.amount), 1)
 
   return (
-    <div className="flex items-end justify-between h-full gap-2 px-2">
+    <div className="flex items-end justify-between h-full gap-1 md:gap-2 px-1 md:px-2">
         {data.map((m, idx) => {
             // Calculate height percentage (min 10% for visibility)
             const heightPct = Math.max((m.amount / maxAmount) * 100, 10)
             
             return (
-                <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                    <div className="relative w-full flex flex-col items-center justify-end h-[80%]">
+                <div key={idx} className="flex-1 flex flex-col items-center gap-1 group h-full justify-end min-w-0">
+                    <div className="relative w-full flex flex-col items-center justify-end flex-1">
                         <div 
                             className={clsx(
-                                "w-full max-w-[16px] rounded-full transition-all duration-1000",
+                                "w-full max-w-[10px] md:max-w-[16px] rounded-full transition-all duration-1000",
                                 m.isCurrent ? "bg-orange-500 shadow-lg shadow-orange-200" : "bg-orange-100 group-hover:bg-orange-200"
                             )}
                             style={{ height: `${heightPct}%` }}
                         ></div>
                     </div>
                     <span className={clsx(
-                        "text-[10px] font-black uppercase tracking-wider", 
+                        "text-[8px] md:text-[10px] font-black uppercase tracking-wider truncate text-center w-full", 
                         m.isCurrent ? "text-orange-500" : "text-orange-200"
                     )}>
-                        {m.name}
+                        {m.name.substring(0, 3)}
                     </span>
                 </div>
             )

@@ -21,9 +21,11 @@ export default function SummaryPage() {
   const yearlyOTIncome = yearlyRecords.reduce((acc, r) => acc + Number(r.total_income), 0)
   const totalYearlyIncome = yearlyOTIncome
 
-  // Mock percentage for the ring (e.g., target 1M THB ?)
-  // For now let's just make it relative to some goal or just visual
-  const progressPercentage = Math.min(Math.round((totalYearlyIncome / 100000) * 100), 100) 
+  // Add dynamic target calculation
+  const localTarget = localStorage.getItem('ot_target_' + user?.id)
+  const targetOT = user?.ot_target || (localTarget ? Number(localTarget) : 50000)
+  
+  const progressPercentage = targetOT > 0 ? Math.min(Math.round((totalYearlyIncome / targetOT) * 100), 100) : 0
 
   return (
     <div className="h-full flex flex-col bg-[#fffbf5]">

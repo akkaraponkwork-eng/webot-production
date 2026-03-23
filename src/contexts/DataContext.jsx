@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useUser } from './UserContext'
-import { supabase } from '../lib/supabase'
+import { apiCall } from '../lib/api'
 import { usePet } from './PetContext'
 
 const DataContext = createContext({})
@@ -15,23 +15,33 @@ export const DataProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) return
+    if (!user) {
+        setRecords([])
+        setStats({ totalIncome: 0, totalHours: 0 })
+        setLoading(false)
+        return
+    }
 
     const fetchData = async () => {
+      let isCached = false;
       try {
-        // Fetch actual OT records from Supabase
-        const { data: otData, error } = await supabase
-            .from('ot_records')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('date', { ascending: false })
-            
-        if (error) throw error
-        
-        if (otData) {
-            setRecords(otData)
-            calculateStats(otData)
-        }
+          const cached = localStorage.getItem(`ot_records_${user.id}`)
+          if (cached) {
+              const parsed = JSON.parse(cached)
+              setRecords(parsed)
+              calculateStats(parsed)
+              setLoading(false)
+              isCached = true
+          } else {
+              setLoading(true)
+          }
+      } catch(e) {}
+
+      try {
+        const data = await apiCall('getOTRecords', {}, !isCached) // Don't show loading popup if we already have cache
+        setRecords(data || [])
+        calculateStats(data || [])
+        localStorage.setItem(`ot_records_${user.id}`, JSON.stringify(data || []))
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -51,17 +61,15 @@ export const DataProvider = ({ children }) => {
   const addRecord = async (date, hours, multiplier) => {
       if (!user) return
 
-      // Calculation logic
-      // Calculation logic
-      let hoursPerDay = 8 // Default
+      let hoursPerDay = 8
       if (user.work_start_time && user.work_end_time) {
-          const [startH, startM] = user.work_start_time.split(':').map(Number)
-          const [endH, endM] = user.work_end_time.split(':').map(Number)
+          const safeStart = user.work_start_time.includes('T') ? '08:00' : user.work_start_time.substring(0, 5)
+          const safeEnd = user.work_end_time.includes('T') ? '17:00' : user.work_end_time.substring(0, 5)
           
+          const [startH, startM] = safeStart.split(':').map(Number)
+          const [endH, endM] = safeEnd.split(':').map(Number)
           const startDecimal = startH + (startM / 60)
           const endDecimal = endH + (endM / 60)
-          
-          // Calculate pure span WITH break deduction (Restored)
           const span = endDecimal - startDecimal
           hoursPerDay = span > 0 ? (span - 1) : 8
       }
@@ -69,53 +77,52 @@ export const DataProvider = ({ children }) => {
       const hourlyRate = (user.base_salary || 15000) / (user.work_days_per_month || 30) / hoursPerDay
       const income = hourlyRate * hours * multiplier
 
-      // Fix Timezone Issue:
-      // We want the saved "date" to match the calendar date selected by the user.
-      // Since we slice 'T' off the ISO string for display, we must ensure the ISO string date part matches the local selection.
-      // We shift the date object by the timezone offset so that .toISOString() yields the correct local date.
       const offsetDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
       
-      const { data, error } = await supabase
-        .from('ot_records')
-        .insert({
-            user_id: user.id,
+      try {
+         const newRecord = await apiCall('addOTRecord', {
             date: offsetDate.toISOString(), 
             hours,
             rate_multiplier: multiplier,
-            total_income: income
-        })
-        .select()
-        .single()
-
-      if (data) {
-          const newRecords = [data, ...records]
-          setRecords(newRecords)
-          calculateStats(newRecords)
-          
-          // Add Points (100 pts per hour)
-          earnPoints(Math.floor(hours * 100))
+            total_income: Math.round(income)
+         })
+         
+         const newRecords = [newRecord, ...records]
+         setRecords(newRecords)
+         calculateStats(newRecords)
+         localStorage.setItem(`ot_records_${user.id}`, JSON.stringify(newRecords))
+         
+         if (earnPoints) earnPoints(Math.floor(hours * 100))
+      } catch (e) {
+          console.error("Failed to add OT", e)
+          alert("Failed to add OT record: " + e.message)
       }
   }
 
   const deleteRecord = async (id) => {
       if (!user) return
-      
-      const { error } = await supabase
-        .from('ot_records')
-        .delete()
-        .eq('id', id)
-      
-      if (!error) {
-          const newRecords = records.filter(r => r.id !== id)
-          setRecords(newRecords)
-          calculateStats(newRecords)
-      } else {
-        console.error("Error deleting record:", error)
+      try {
+         await apiCall('deleteOTRecord', { id })
+         const newRecords = records.filter(r => r.id !== id)
+         setRecords(newRecords)
+         calculateStats(newRecords)
+         localStorage.setItem(`ot_records_${user.id}`, JSON.stringify(newRecords))
+      } catch (e) {
+          console.error("Failed to delete OT", e)
+          alert("Failed to delete record: " + e.message)
       }
   }
 
+  const value = React.useMemo(() => ({
+    records,
+    stats,
+    addRecord,
+    deleteRecord,
+    loading
+  }), [records, stats, loading, addRecord, deleteRecord])
+
   return (
-    <DataContext.Provider value={{ records, stats, addRecord, deleteRecord, loading }}>
+    <DataContext.Provider value={value}>
         {children}
     </DataContext.Provider>
   )
