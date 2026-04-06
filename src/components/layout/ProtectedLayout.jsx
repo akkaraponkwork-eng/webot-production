@@ -19,8 +19,8 @@ export default function ProtectedLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-orange-50 min-h-[100dvh] flex flex-col">
-      <div className="flex-1 overflow-hidden relative">
+    <div className="h-[100dvh] w-full bg-orange-50 flex flex-col relative overflow-hidden font-sans">
+      <div className="flex-1 overflow-hidden relative flex flex-col">
         <Outlet />
       </div>
       <BottomNav />

@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { CalendarDays, PieChart, Cat } from 'lucide-react'
+import { CalendarDays, PieChart, Cat, MessageCircle } from 'lucide-react'
 import { clsx } from 'clsx'
 
 export default function BottomNav() {
@@ -22,16 +22,28 @@ export default function BottomNav() {
         <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">Schedule</span>
       </NavLink>
 
-      {/* Center Floating Button (My Cat / Home) */}
+      {/* My Cat Tab (Dashboard) */}
       <NavLink
         to="/my-cat"
         className={({ isActive }) => clsx(
-            "relative -top-6 flex flex-col items-center justify-center w-20 h-20 rounded-full shadow-[0_8px_20px_rgba(249,115,22,0.4)] transition-transform duration-300 active:scale-95 border-4 border-[#fffbf5]",
-            isActive ? "bg-orange-500 text-white" : "bg-orange-400 text-orange-50 hover:bg-orange-500"
+            "flex flex-col items-center mb-2 transition-all duration-300 w-20",
+            isActive ? "text-orange-500" : "text-orange-200 hover:text-orange-300"
         )}
       >
-        <Cat strokeWidth={2.5} className="w-9 h-9" />
-        <span className="text-[10px] font-bold mt-1 absolute -bottom-6 text-orange-500 uppercase tracking-widest">My Cat</span>
+        <Cat strokeWidth={2.5} className="w-7 h-7" />
+        <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">My Cat</span>
+      </NavLink>
+
+      {/* Chat Tab */}
+      <NavLink
+        to="/chat" 
+        className={({ isActive }) => clsx(
+            "flex flex-col items-center mb-2 transition-all duration-300 w-20",
+            isActive ? "text-orange-500" : "text-orange-200 hover:text-orange-300"
+        )}
+      >
+        <MessageCircle strokeWidth={2.5} className="w-7 h-7" />
+        <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">Chat</span>
       </NavLink>
 
       {/* Summary Tab (Charts) */}

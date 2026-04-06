@@ -158,7 +158,7 @@ export default function CalendarPage() {
       
       {/* Quick Log Modal Overlay */}
       {isModalOpen && selectedDate && (
-          <div className="fixed inset-0 bg-slate-900/60 z-[60] overflow-y-auto backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-slate-900/60 z-[9999] overflow-y-auto backdrop-blur-sm animate-in fade-in duration-200">
               <div className="flex min-h-full items-center justify-center p-4">
                   <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm animate-in zoom-in-95 duration-300 relative shadow-2xl my-auto">
                   

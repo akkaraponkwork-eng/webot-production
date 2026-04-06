@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useUser } from './UserContext'
 import { apiCall } from '../lib/api'
 import { usePet } from './PetContext'
+import toast from 'react-hot-toast'
 
 const DataContext = createContext({})
 
@@ -95,7 +96,7 @@ export const DataProvider = ({ children }) => {
          if (earnPoints) earnPoints(Math.floor(hours * 100))
       } catch (e) {
           console.error("Failed to add OT", e)
-          alert("Failed to add OT record: " + e.message)
+          toast.error('Failed to add OT: ' + e.message)
       }
   }
 
@@ -109,7 +110,7 @@ export const DataProvider = ({ children }) => {
          localStorage.setItem(`ot_records_${user.id}`, JSON.stringify(newRecords))
       } catch (e) {
           console.error("Failed to delete OT", e)
-          alert("Failed to delete record: " + e.message)
+          toast.error('Failed to delete: ' + e.message)
       }
   }
 

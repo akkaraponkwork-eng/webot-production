@@ -3,6 +3,7 @@ import { useUser } from '../contexts/UserContext'
 import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { clsx } from 'clsx'
+import toast from 'react-hot-toast'
 
 export default function Settings() {
   const { user, updateProfile, signOut } = useUser()
@@ -50,15 +51,16 @@ export default function Settings() {
     })
     
     if (result.success) {
-        setTimeout(() => navigate(-1), 500) // Close after save
+        toast.success('Settings saved!')
+        setTimeout(() => navigate(-1), 500)
     } else {
-        alert("Error saving settings: " + result.error?.message)
+        toast.error('Error: ' + result.error?.message)
     }
     setSaving(false)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative animate-in zoom-in-95 duration-300">
         
         {/* Header */}
@@ -145,6 +147,18 @@ export default function Settings() {
             className="w-full mt-4 py-3 rounded-2xl font-bold text-red-400 text-sm tracking-wide hover:bg-red-50 transition-colors"
         >
             Sign Out
+        </button>
+
+        <button 
+            onClick={() => {
+                if (confirm('Clear all chat history from this device?')) {
+                    localStorage.removeItem('cached_chat_history')
+                    toast.success('Chat history cleared!')
+                }
+            }}
+            className="w-full mt-2 py-3 rounded-2xl font-bold text-slate-400 text-sm tracking-wide hover:bg-slate-50 transition-colors"
+        >
+            Clear Chat History
         </button>
 
       </div>

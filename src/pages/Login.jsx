@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import CatMinimal from '../components/2d/CatMinimal'
 import { LogIn, UserPlus } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export default function Login() {
   const { user, login, register } = useUser()
@@ -30,7 +31,7 @@ export default function Login() {
         const res = await register(formattedEmail, password, fullName)
         if (!res.success) throw new Error(res.error)
         
-        alert("Registration successful! You can now log in.")
+        toast.success('Registration successful! You can now log in.')
         setIsRegister(false)
         setPassword('')
       } else {
@@ -38,7 +39,7 @@ export default function Login() {
         if (!res.success) throw new Error(res.error)
       }
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setLoading(false)
     }

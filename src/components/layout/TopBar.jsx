@@ -9,7 +9,7 @@ export default function TopBar() {
   const { level, points } = usePet()
 
   return (
-    <header className="px-6 pt-[calc(3.5rem+env(safe-area-inset-top))] pb-2 flex justify-between items-center bg-[#fffbf5]">
+    <header className="px-6 pt-[calc(2.5rem+env(safe-area-inset-top))] pb-2 flex justify-between items-center bg-[#fffbf5] shrink-0 sticky top-0 z-50">
       {/* Brand / Level */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-200">
