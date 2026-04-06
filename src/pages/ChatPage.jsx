@@ -17,6 +17,21 @@ export default function ChatPage() {
     } catch { return ''; }
   };
 
+  // Safe localStorage save (strip images to save space)
+  const saveChatCache = (msgs) => {
+    try {
+      const lite = msgs.map(m => ({ ...m, image: m.image ? '[img]' : '' }));
+      localStorage.setItem('cached_chat_history', JSON.stringify(lite));
+    } catch (e) {
+      // Quota exceeded - clear old cache and try again
+      try {
+        localStorage.removeItem('cached_chat_history');
+        const lite = msgs.slice(-50).map(m => ({ ...m, image: m.image ? '[img]' : '' }));
+        localStorage.setItem('cached_chat_history', JSON.stringify(lite));
+      } catch { /* give up silently */ }
+    }
+  };
+
   const [messages, setMessages] = useState(() => {
     const cached = localStorage.getItem('cached_chat_history');
     if (cached) {
@@ -45,7 +60,7 @@ export default function ChatPage() {
     scrollToBottom();
     // Auto-save to local cache any time messages change
     if (messages.length > 0) {
-      localStorage.setItem('cached_chat_history', JSON.stringify(messages));
+      saveChatCache(messages);
     }
   }, [messages, isLoading]);
 
@@ -70,11 +85,11 @@ export default function ChatPage() {
       if (!hasUserSentMessage.current) {
         if (res && res.messages && res.messages.length > 0) {
           setMessages(res.messages);
-          localStorage.setItem('cached_chat_history', JSON.stringify(res.messages));
+          saveChatCache(res.messages);
         } else if (messages.length === 0) { // Only set default if nothing is cached
           const defaultMsg = [{ id: '1', role: 'bot', content: 'เมี๊ยวว! มีอะไรให้ฉันช่วยไหมเมี้ยว?' }];
           setMessages(defaultMsg);
-          localStorage.setItem('cached_chat_history', JSON.stringify(defaultMsg));
+          saveChatCache(defaultMsg);
         }
       }
       setHasLoadedHistory(true);
@@ -88,7 +103,7 @@ export default function ChatPage() {
       const res = await apiCall('getChatHistory', {}, false);
       if (res && res.messages && res.messages.length > 0) {
         setMessages(res.messages);
-        localStorage.setItem('cached_chat_history', JSON.stringify(res.messages));
+        saveChatCache(res.messages);
         toast.success('Chat synced!');
         
         // Check for new messages and notify
@@ -209,8 +224,8 @@ export default function ChatPage() {
               🐱
             </div>
             <div>
-              <h2 className="font-bold text-lg leading-tight">Meow Chat</h2>
-              <p className="text-orange-100 text-sm">ผู้ช่วยขนปุยของคุณ</p>
+              <h2 className="font-bold text-base leading-tight">Meow Chat</h2>
+              <p className="text-orange-100 text-xs">ผู้ช่วยขนปุยของคุณ</p>
             </div>
           </div>
           <ChatCountdown />
