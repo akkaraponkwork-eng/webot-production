@@ -12,6 +12,7 @@ export default function Admin() {
   const [systemPrompt, setSystemPrompt] = useState('You are Meow Chat. A helpful cat assistant.')
   const [countdownDate, setCountdownDate] = useState('')
   const [apiKey, setApiKey] = useState('')
+  const [botEnabled, setBotEnabled] = useState(true)
   
   // Schedule Form State
   const [newScheduleTime, setNewScheduleTime] = useState('08:00')
@@ -37,6 +38,16 @@ export default function Admin() {
       return res
     }
   })
+  
+  // Fetch Bot Status
+  useQuery({
+    queryKey: ['adminBotStatus'],
+    queryFn: async () => {
+      const res = await apiCall('adminGetBotStatus').catch(() => ({ botEnabled: true }))
+      if (res.hasOwnProperty('botEnabled')) setBotEnabled(res.botEnabled)
+      return res
+    }
+  })
 
   // Fetch Schedules
   const { data: schedules } = useQuery({
@@ -56,6 +67,12 @@ export default function Admin() {
   const updateApiKeyMutation = useMutation({
       mutationFn: (key) => apiCall('adminSetApiKey', { apiKey: key }),
       onSuccess: () => toast.success('API Key updated!'),
+      onError: (err) => toast.error(err.message)
+  })
+
+  const updateBotStatusMutation = useMutation({
+      mutationFn: (enabled) => apiCall('adminSetBotStatus', { enabled }),
+      onSuccess: () => toast.success('Bot status updated!'),
       onError: (err) => toast.error(err.message)
   })
 
@@ -273,6 +290,32 @@ export default function Admin() {
                     ))}
                 </div>
             )}
+        </div>
+
+        {/* Bot Status Toggle */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-orange-100">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className={botEnabled ? "w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center" : "w-10 h-10 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center"}>
+                        <MessageCircle size={24} />
+                    </div>
+                    <div>
+                        <h2 className="font-bold text-slate-800">Bot Auto-Reply</h2>
+                        <p className="text-xs text-slate-500">{botEnabled ? 'Bot is currently replying to users' : 'Manual mode: Bot is paused'}</p>
+                    </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    const newStatus = !botEnabled;
+                    setBotEnabled(newStatus);
+                    updateBotStatusMutation.mutate(newStatus);
+                  }}
+                  disabled={updateBotStatusMutation.isPending}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${botEnabled ? 'bg-orange-500' : 'bg-slate-300'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${botEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+            </div>
         </div>
 
         {/* Prompt Settings */}

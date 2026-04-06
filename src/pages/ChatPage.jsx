@@ -43,7 +43,16 @@ export default function ChatPage() {
     return [];
   });
   const [input, setInput] = useState('');
-  const [imageFile, setImageFile] = useState(null);
+  const [botEnabled, setBotEnabled] = useState(true);
+  
+  // Pull to refresh state
+  const [pullProgress, setPullProgress] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const scrollContainerRef = useRef(null);
+  const startY = useRef(0);
+  const isPulling = useRef(false);
+
+  const PULL_THRESHOLD = 80;
   const [imageBase64, setImageBase64] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
@@ -99,6 +108,8 @@ export default function ChatPage() {
   };
 
   const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
     try {
       const res = await apiCall('getChatHistory', {}, false);
       if (res && res.messages && res.messages.length > 0) {
@@ -120,6 +131,46 @@ export default function ChatPage() {
       }
     } catch (err) {
       toast.error('Failed to sync');
+    } finally {
+      setIsRefreshing(false);
+      setPullProgress(0);
+    }
+  };
+
+  // Pull to refresh logic
+  const handleTouchStart = (e) => {
+    if (scrollContainerRef.current.scrollTop <= 0) {
+      startY.current = e.touches[0].pageY;
+      isPulling.current = true;
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isPulling.current) return;
+    const currentY = e.touches[0].pageY;
+    const diff = currentY - startY.current;
+    
+    if (diff > 0 && scrollContainerRef.current.scrollTop <= 0) {
+      // Apply resistance
+      const progress = Math.min(diff * 0.4, PULL_THRESHOLD + 40);
+      setPullProgress(progress);
+      
+      // Prevent default scrolling when pulling
+      if (diff > 10) e.preventDefault();
+    } else {
+      isPulling.current = false;
+      setPullProgress(0);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isPulling.current) return;
+    isPulling.current = false;
+    
+    if (pullProgress >= PULL_THRESHOLD) {
+      handleRefresh();
+    } else {
+      setPullProgress(0);
     }
   };
 
@@ -176,6 +227,11 @@ export default function ChatPage() {
         image: newMessage.image 
       }, false).catch(() => null);
 
+      if (res && res.paused) {
+        // Bot is disabled by admin, no auto-reply
+        return;
+      }
+
       if (res && res.reply) {
         const botMsg = {
           id: Date.now().toString() + '_bot',
@@ -230,14 +286,31 @@ export default function ChatPage() {
           </div>
           <ChatCountdown />
           <div className="flex items-center gap-1">
-            <button onClick={handleRefresh} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-90" title="Sync">
-              <RefreshCw size={16} />
-            </button>
+            {/* Manual refresh button removed in favor of pull-to-refresh */}
           </div>
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto p-4 bg-white border-x border-slate-100 flex flex-col gap-4">
+        <div 
+          ref={scrollContainerRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="flex-1 overflow-y-auto p-4 bg-white border-x border-slate-100 flex flex-col gap-4 relative"
+        >
+          {/* Pull to refresh indicator */}
+          <div 
+            className="absolute top-0 left-0 right-0 flex items-center justify-center transition-all duration-200 pointer-events-none"
+            style={{ 
+              height: `${pullProgress}px`, 
+              opacity: pullProgress / PULL_THRESHOLD,
+              transform: `translateY(${pullProgress > PULL_THRESHOLD ? (pullProgress - PULL_THRESHOLD) / 2 : 0}px)` 
+            }}
+          >
+            <div className={`p-2 bg-orange-500 rounded-full shadow-lg text-white transition-transform ${pullProgress >= PULL_THRESHOLD ? 'rotate-180 scale-110' : ''}`}>
+              <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
+            </div>
+          </div>
           
           {messages.map((msg, i) => {
             const isUser = msg.role === 'user';
