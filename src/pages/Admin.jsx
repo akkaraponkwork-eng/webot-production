@@ -72,8 +72,14 @@ export default function Admin() {
 
   const updateBotStatusMutation = useMutation({
       mutationFn: (enabled) => apiCall('adminSetBotStatus', { enabled }),
-      onSuccess: () => toast.success('Bot status updated!'),
-      onError: (err) => toast.error(err.message)
+      onSuccess: () => {
+          toast.success('Bot status updated!');
+          queryClient.invalidateQueries(['adminBotStatus']);
+      },
+      onError: (err, variables) => {
+          toast.error(err.message);
+          setBotEnabled(!variables); // Rollback to previous state
+      }
   })
 
   const addScheduleMutation = useMutation({

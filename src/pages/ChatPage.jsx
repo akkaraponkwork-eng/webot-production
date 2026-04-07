@@ -53,6 +53,7 @@ export default function ChatPage() {
   const isPulling = useRef(false);
 
   const PULL_THRESHOLD = 80;
+  const [imageFile, setImageFile] = useState(null);
   const [imageBase64, setImageBase64] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
@@ -122,6 +123,7 @@ export default function ChatPage() {
         const oldCount = cached ? JSON.parse(cached).length : 0;
         if (res.messages.length > oldCount && 'Notification' in window && Notification.permission === 'granted') {
           const lastMsg = res.messages[res.messages.length - 1];
+          // Notify if the last message is from the bot/admin (not the user themselves)
           if (lastMsg.role !== 'user') {
             new Notification('Meow Chat 🐱', { body: lastMsg.content?.substring(0, 80) || 'New message!', icon: '/pwa-192x192.png' });
           }
@@ -229,6 +231,7 @@ export default function ChatPage() {
 
       if (res && res.paused) {
         // Bot is disabled by admin, no auto-reply
+        toast('แอดมินปิดบอทชั่วคราวเพื่อตอบคำถามด้วยตนเอง', { icon: '🧑‍💻' });
         return;
       }
 
@@ -312,6 +315,14 @@ export default function ChatPage() {
             </div>
           </div>
           
+          {messages.length === 0 && !isLoading && (
+             <div className="flex flex-col items-start mt-4">
+               <div className="bg-slate-50 border border-slate-100 text-slate-700 p-3 px-4 rounded-2xl rounded-tl-sm shadow-sm max-w-[85%]">
+                 <p className="text-[15px]">เมี๊ยวว! มีอะไรให้ฉันช่วยไหมเมี้ยว?</p>
+               </div>
+             </div>
+          )}
+
           {messages.map((msg, i) => {
             const isUser = msg.role === 'user';
             const isAdmin = msg.role === 'admin';
